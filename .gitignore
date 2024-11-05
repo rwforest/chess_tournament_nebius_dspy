@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+venv/
+game_data.csv
+tournament_results.csv
