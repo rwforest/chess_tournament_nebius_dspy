@@ -57,7 +57,17 @@ def run_tournament(model_instances, n_games=5, tournament_mode="mixed"):
     # Play each matchup
     for idx, (agent_white, agent_black) in enumerate(matchups):
         print(f"Game {idx + 1} between {agent_white.name} (White) and {agent_black.name} (Black)")
-        winner = play_game(agent_white, agent_black, tournament_mode)
+
+        try:
+            import mlflow
+            with mlflow.start_run() as run:
+                mlflow.dspy.autolog()
+                experiment_id = run.info.experiment_id
+                run_id = run.info.run_id        
+                winner = play_game(agent_white, agent_black, tournament_mode, experiment_id, run_id)
+        except Exception as e:
+            print(f"Error playing game: {e}")
+            continue
 
         # Record the game details
         game_record = {

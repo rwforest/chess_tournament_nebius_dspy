@@ -1,16 +1,28 @@
 import csv
 import chess
+import chess.pgn
 import time
 import os
 import random
+from datetime import datetime
 
-
-def play_game(agent_white, agent_black, tournament_mode):
+def play_game(agent_white, agent_black, tournament_mode, experiment_id, run_id):
     moves = []
     board = chess.Board()
+    current_datetime = datetime.now()
     feedback_white = ""
     feedback_black = ""
     move_count = 0
+
+    game = chess.pgn.Game()
+    game.headers["Event"] = "LLM Tournament Match"
+    game.headers["White"] = agent_white.name
+    game.headers["Black"] = agent_black.name
+    game.headers["ExperimentID"] = experiment_id
+    game.headers["RunID"] = run_id    
+    game.headers["Date"] = current_datetime.strftime("%Y-%m-%d")
+    game.headers["Time"] = current_datetime.strftime("%H:%M:%S")    
+
     while not board.is_game_over():
         if board.turn:
             current_agent = agent_white
@@ -59,7 +71,7 @@ def play_game(agent_white, agent_black, tournament_mode):
         print(f"{current_agent.name} plays: {next_move_str}")
         print(board)
         print("\n")
-
+        
         # Check for draw or stalemate conditions
         if board.can_claim_threefold_repetition():
             print("Draw by threefold repetition.")
@@ -79,9 +91,20 @@ def play_game(agent_white, agent_black, tournament_mode):
         if move_count >= 100:
             print("Draw due to exceeding maximum number of moves.")
             break
+        if board.is_game_over():
+            break        
+
+    if move_count == 1:
+        game.add_variation(move)
+    else:
+        node = game
+        for past_move in board.move_stack[:-1]:
+            node = node.add_variation(past_move)
 
     # Determine the result and update ratings
     result = board.result()
+    game.headers["Result"] = result
+
     if result == "1-0":
         winner = agent_white
         agent_white.update_elo(agent_black, "win", tournament_mode)
@@ -117,6 +140,9 @@ def play_game(agent_white, agent_black, tournament_mode):
                 "moves": agent.total_moves,
                 "elo_rating": agent.rating
             })
+
+    with open("game.pgn", "a") as pgn_file:
+        pgn_file.write(str(game) + '\n\n')
 
     # reinitialize the ratings for the next game, the idea is to see how
     # much drop or increase in the rating after each game on average
