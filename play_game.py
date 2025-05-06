@@ -88,9 +88,9 @@ def play_game(agent_white, agent_black, tournament_mode, experiment_id, run_id):
         if board.is_seventyfive_moves():
             print("Draw by the seventy-five-move rule.")
             break
-        if move_count >= 100:
-            print("Draw due to exceeding maximum number of moves.")
-            break
+        # if move_count >= 100:
+        #     print("Draw due to exceeding maximum number of moves.")
+        #     break
         if board.is_game_over():
             break        
 
